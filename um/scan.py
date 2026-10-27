@@ -259,10 +259,8 @@ def pe_info(path: Path) -> dict | None:
     opt = off + 24
     magic = struct.unpack_from("<H", head, opt)[0]
     dd = opt + (96 if magic == 0x10B else 112)
-    # NumberOfRvaAndSizes bounds the data directories (92 for PE32, 108 for PE32+), and the
-    # CLR directory is the 15th: a header that declares fewer ends before that slot, and the
-    # section table that follows must not be read as a CLR RVA — a native exe that happened
-    # to carry nonzero section bytes there would be routed to .NET loaders (#441).
+    # the CLR header is directory 14, so it only exists if NumberOfRvaAndSizes counts it; past the
+    # declared directories comes the section table, and its bytes would read as a CLR RVA (#441)
     num_dirs = struct.unpack_from("<I", head, opt + (92 if magic == 0x10B else 108))[0]
     clr_rva = 0
     if num_dirs > 14 and dd + 15 * 8 <= len(head):
